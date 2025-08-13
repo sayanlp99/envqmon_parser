@@ -20,7 +20,7 @@ ca_cert_path = os.getenv("MQTT_CA_CERT_PATH", "")
 
 def on_connect(client, userdata, flags, rc):
     if rc == 0:
-        print(f"✅ Connected to MQTT broker successfully.")
+        print("✅ Connected to MQTT broker successfully.")
         client.subscribe("envqmon/+")
     else:
         print(f"❌ Failed to connect, return code {rc}")
@@ -44,16 +44,27 @@ def on_message(client, userdata, msg):
 def start_mqtt():
     client = mqtt.Client(client_id=client_id, protocol=mqtt.MQTTv311)
 
+    # Set username/password if provided
     if mqtt_username and mqtt_password:
         client.username_pw_set(mqtt_username, mqtt_password)
 
-    if use_tls and ca_cert_path:
-        client.tls_set(
-            ca_certs=ca_cert_path,
-            certfile=None,
-            keyfile=None,
-            tls_version=ssl.PROTOCOL_TLSv1_2,
-        )
+    # Configure TLS if enabled
+    if use_tls:
+        try:
+            if ca_cert_path and os.path.exists(ca_cert_path):
+                client.tls_set(
+                    ca_certs=ca_cert_path,
+                    certfile=None,
+                    keyfile=None,
+                    tls_version=ssl.PROTOCOL_TLSv1_2,
+                )
+                print(f"🔒 TLS enabled with CA cert: {ca_cert_path}")
+            else:
+                client.tls_set(tls_version=ssl.PROTOCOL_TLSv1_2)
+                client.tls_insecure_set(True)
+                print("🔒 TLS enabled without CA cert (insecure mode).")
+        except Exception as e:
+            print(f"⚠️ Failed to configure TLS ({e}), continuing without TLS.")
 
     client.on_connect = on_connect
     client.on_message = on_message
@@ -63,3 +74,6 @@ def start_mqtt():
         client.loop_forever()
     except Exception as e:
         print(f"❌ Failed to connect to MQTT broker: {e}")
+
+if __name__ == "__main__":
+    start_mqtt()
