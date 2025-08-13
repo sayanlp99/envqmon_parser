@@ -24,9 +24,9 @@ LOCATION = {"lat": 12.9716, "lon": 77.5946}  # Bangalore
 DEVICES = {
     "7bcf5f30-e209-4751-bbdf-e5c2327577cc":     {"temp_offset": 2,  "humidity_offset": 5,  "noise_offset": 5,  "pm25_offset": 5,  "co_offset": 0.3, "lpg_offset": 2},
     "c755fc04-4ded-4e9a-a1ef-de7eb4c95514":     {"temp_offset": -1, "humidity_offset": 0,  "noise_offset": -10,"pm25_offset": 0,  "co_offset": 0.0, "lpg_offset": 0},
-    "566ed335-beb7-4973-8c7c-324346b28533":        {"temp_offset": 0,  "humidity_offset": 0,  "noise_offset": 0,  "pm25_offset": 2,  "co_offset": 0.1, "lpg_offset": 0.5},
-    "7d042394-f964-4293-9f18-ef706ca00b13":      {"temp_offset": 1,  "humidity_offset": -5, "noise_offset": 3,  "pm25_offset": 20, "co_offset": 0.5, "lpg_offset": 0.2},
-    "2a571118-000a-419f-8e96-092f295a1518": {"temp_offset": 0.5,"humidity_offset": 2,  "noise_offset": 2,  "pm25_offset": 3,  "co_offset": 0.1, "lpg_offset": 0.3}
+    "566ed335-beb7-4973-8c7c-324346b28533":    {"temp_offset": 0,  "humidity_offset": 0,  "noise_offset": 0,  "pm25_offset": 2,  "co_offset": 0.1, "lpg_offset": 0.5},
+    "7d042394-f964-4293-9f18-ef706ca00b13":    {"temp_offset": 1,  "humidity_offset": -5, "noise_offset": 3,  "pm25_offset": 20, "co_offset": 0.5, "lpg_offset": 0.2},
+    "2a571118-000a-419f-8e96-092f295a1518":    {"temp_offset": 0.5,"humidity_offset": 2,  "noise_offset": 2,  "pm25_offset": 3,  "co_offset": 0.1, "lpg_offset": 0.3}
 }
 
 def fetch_weather():
@@ -138,9 +138,19 @@ def simulate():
     if mqtt_username and mqtt_password:
         client.username_pw_set(mqtt_username, mqtt_password)
 
-    if use_tls and ca_cert_path:
-        client.tls_set(ca_certs=ca_cert_path, tls_version=ssl.PROTOCOL_TLSv1_2)
-        client.tls_insecure_set(False)
+    # Updated TLS handling — works even if CA cert path is missing
+    if use_tls:
+        try:
+            if ca_cert_path and os.path.exists(ca_cert_path):
+                client.tls_set(ca_certs=ca_cert_path, tls_version=ssl.PROTOCOL_TLSv1_2)
+                client.tls_insecure_set(False)
+                print(f"🔒 TLS enabled with CA cert: {ca_cert_path}")
+            else:
+                client.tls_set(tls_version=ssl.PROTOCOL_TLSv1_2)
+                client.tls_insecure_set(True)
+                print("🔒 TLS enabled without CA cert (insecure mode).")
+        except Exception as e:
+            print(f"⚠️ Failed to configure TLS ({e}), continuing without TLS.")
 
     client.on_connect = on_connect
     client.connect(mqtt_broker, mqtt_port, 60)
