@@ -7,6 +7,7 @@ import requests
 from datetime import datetime
 from dotenv import load_dotenv
 import paho.mqtt.client as mqtt
+import math
 
 load_dotenv()
 
@@ -60,43 +61,34 @@ def get_season(month):
     else:
         return "winter"
 
-def compute_profiles(hour, season):
+def compute_profiles(hour_f, season):
     """Return target ranges for parameters based on time and season."""
     profiles = {
-        "summer": {"temp_min": 20, "temp_max": 35, "humidity_min": 40, "humidity_max": 60, "pm25": (80, 150)},
-        "monsoon": {"temp_min": 19, "temp_max": 28, "humidity_min": 70, "humidity_max": 90, "pm25": (30, 60)},
-        "winter": {"temp_min": 15, "temp_max": 27, "humidity_min": 50, "humidity_max": 70, "pm25": (50, 100)}
+        "summer": {"pm25": (80, 150)},
+        "monsoon": {"pm25": (30, 60)},
+        "winter": {"pm25": (50, 100)}
     }
     p = profiles[season]
 
-    if 6 <= hour <= 18:
-        frac = (hour - 6) / 12
-        target_temp = p["temp_min"] + (p["temp_max"] - p["temp_min"]) * frac
-    else:
-        target_temp = p["temp_min"]
-
-    target_humidity = p["humidity_max"] if hour < 6 or hour > 20 else p["humidity_min"]
-    target_pressure = 1010 + random.uniform(-5, 5)
-
-    if 6 <= hour <= 18:
-        light = 100 + (hour - 6) * 80
+    # Smooth light using sine wave during daytime
+    if 6 <= hour_f <= 18:
+        day_frac = (hour_f - 6) / 12
+        light = 50 + 950 * math.sin(math.pi * day_frac)
     else:
         light = 50
 
+    # Noise levels with slight smoothing via hour_f
     noise = 40
-    if 7 <= hour <= 9 or 17 <= hour <= 20:
+    if 7 <= hour_f < 9 or 17 <= hour_f < 20:
         noise = 80
-    elif 10 <= hour <= 16:
+    elif 10 <= hour_f < 16:
         noise = 60
 
-    pm25_range = p["pm25"]
-    pm25 = random.uniform(*pm25_range)
-    pm10 = pm25 + random.uniform(10, 50)
+    # Fixed mid-range for PM, no random for smoothness
+    pm25 = (p["pm25"][0] + p["pm25"][1]) / 2
+    pm10 = pm25 + 30
 
     return {
-        "temperature": target_temp,
-        "humidity": target_humidity,
-        "pressure": target_pressure,
         "light": light,
         "noise": noise,
         "pm25": pm25,
@@ -117,6 +109,7 @@ def simulate():
     season = get_season(datetime.now().month)
     print(f"🌦 Season: {season}")
     baseline = fetch_weather()
+    last_fetch_time = time.time()
 
     # Initialize each device state
     states = {}
@@ -159,20 +152,28 @@ def simulate():
     try:
         while True:
             now = datetime.now()
-            profile = compute_profiles(now.hour, season)
+            hour_f = now.hour + now.minute / 60.0
+
+            # Fetch weather every 60 seconds for realistic gradual updates
+            current_time = time.time()
+            if current_time - last_fetch_time > 60:
+                baseline = fetch_weather()
+                last_fetch_time = current_time
+
+            profile = compute_profiles(hour_f, season)
 
             for dev, offsets in DEVICES.items():
-                states[dev]["temperature"] = drift(states[dev]["temperature"], profile["temperature"] + offsets["temp_offset"], noise=0.2)
-                states[dev]["humidity"] = drift(states[dev]["humidity"], profile["humidity"] + offsets["humidity_offset"], noise=0.5)
-                states[dev]["pressure"] = drift(states[dev]["pressure"], profile["pressure"], noise=0.2)
-                states[dev]["light"] = drift(states[dev]["light"], profile["light"], noise=10)
-                states[dev]["noise"] = drift(states[dev]["noise"], profile["noise"] + offsets["noise_offset"], noise=2)
-                states[dev]["pm25"] = drift(states[dev]["pm25"], profile["pm25"] + offsets["pm25_offset"], noise=3)
-                states[dev]["pm10"] = drift(states[dev]["pm10"], profile["pm10"] + offsets["pm25_offset"], noise=5)
+                states[dev]["temperature"] = drift(states[dev]["temperature"], baseline["temperature"] + offsets["temp_offset"], noise=0.1)
+                states[dev]["humidity"] = drift(states[dev]["humidity"], baseline["humidity"] + offsets["humidity_offset"], noise=0.2)
+                states[dev]["pressure"] = drift(states[dev]["pressure"], baseline["pressure"], noise=0.1)
+                states[dev]["light"] = drift(states[dev]["light"], profile["light"], noise=1)
+                states[dev]["noise"] = drift(states[dev]["noise"], profile["noise"] + offsets["noise_offset"], noise=0.5)
+                states[dev]["pm25"] = drift(states[dev]["pm25"], profile["pm25"] + offsets["pm25_offset"], noise=0.5)
+                states[dev]["pm10"] = drift(states[dev]["pm10"], profile["pm10"] + offsets["pm25_offset"], noise=1)
 
-                states[dev]["co"] = drift(states[dev]["co"], 1.0 + offsets["co_offset"], noise=0.1)
-                states[dev]["methane"] = drift(states[dev]["methane"], 100, noise=5)
-                states[dev]["lpg"] = drift(states[dev]["lpg"], 100 + offsets["lpg_offset"], noise=5)
+                states[dev]["co"] = drift(states[dev]["co"], 1.0 + offsets["co_offset"], noise=0.01)
+                states[dev]["methane"] = drift(states[dev]["methane"], 100, noise=1)
+                states[dev]["lpg"] = drift(states[dev]["lpg"], 100 + offsets["lpg_offset"], noise=1)
 
                 states[dev]["recorded_at"] = int(time.time())
 
