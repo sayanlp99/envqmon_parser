@@ -4,12 +4,16 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-PG_URL = os.getenv("PG_URL")
-conn = psycopg2.connect(PG_URL)
-conn.autocommit = True
+PG_DEVICE_DATA_URL = os.getenv("PG_DEVICE_DATA_URL")
+conn_dd = psycopg2.connect(PG_DEVICE_DATA_URL)
+conn_dd.autocommit = True
+
+PG_DEVICE_URL = os.getenv("PG_DEVICE_URL")
+conn_d = psycopg2.connect(PG_DEVICE_URL)
+conn_d.autocommit = True
 
 def insert_device_data(device_id, data):
-    with conn.cursor() as cur:
+    with conn_dd.cursor() as cur:
         query = """
         INSERT INTO "DeviceData" (
             device_id, temperature, humidity, pressure,
@@ -23,9 +27,9 @@ def insert_device_data(device_id, data):
         ))
 
 def get_device_id(device_name):
-    with conn.cursor() as cur:
+    with conn_d.cursor() as cur:
         query = """
-        SELECT device_id FROM "Devices" WHERE device_name = %s;
+        SELECT device_id FROM "devices" WHERE device_name = %s;
         """
         cur.execute(query, (device_name,))
         result = cur.fetchone()
