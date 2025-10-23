@@ -21,3 +21,12 @@ def insert_device_data(device_id, data):
             data["co"], data["methane"], data["lpg"], data["pm25"], data["pm10"],
             data["noise"], data["light"]
         ))
+
+def get_device_id(device_name):
+    with conn.cursor() as cur:
+        query = """
+        SELECT device_id FROM "Devices" WHERE device_name = %s;
+        """
+        cur.execute(query, (device_name,))
+        result = cur.fetchone()
+        return result[0] if result else None

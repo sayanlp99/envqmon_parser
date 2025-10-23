@@ -23,11 +23,11 @@ LOCATION = {"lat": 12.9716, "lon": 77.5946}  # Bangalore
 
 # Device definitions
 DEVICES = {
-    "7bcf5f30-e209-4751-bbdf-e5c2327577cc":     {"temp_offset": 2,  "humidity_offset": 5,  "noise_offset": 5,  "pm25_offset": 5,  "co_offset": 0.3, "lpg_offset": 2},
-    "c755fc04-4ded-4e9a-a1ef-de7eb4c95514":     {"temp_offset": -1, "humidity_offset": 0,  "noise_offset": -10,"pm25_offset": 0,  "co_offset": 0.0, "lpg_offset": 0},
-    "566ed335-beb7-4973-8c7c-324346b28533":    {"temp_offset": 0,  "humidity_offset": 0,  "noise_offset": 0,  "pm25_offset": 2,  "co_offset": 0.1, "lpg_offset": 0.5},
-    "7d042394-f964-4293-9f18-ef706ca00b13":    {"temp_offset": 1,  "humidity_offset": -5, "noise_offset": 3,  "pm25_offset": 20, "co_offset": 0.5, "lpg_offset": 0.2},
-    "2a571118-000a-419f-8e96-092f295a1518":    {"temp_offset": 0.5,"humidity_offset": 2,  "noise_offset": 2,  "pm25_offset": 3,  "co_offset": 0.1, "lpg_offset": 0.3}
+    "TEST":     {"temp_offset": 2,  "humidity_offset": 5,  "noise_offset": 5,  "pm25_offset": 5,  "co_offset": 0.3, "lpg_offset": 2},
+    "TEST1":     {"temp_offset": -1, "humidity_offset": 0,  "noise_offset": -10,"pm25_offset": 0,  "co_offset": 0.0, "lpg_offset": 0},
+    "TEST3":    {"temp_offset": 0,  "humidity_offset": 0,  "noise_offset": 0,  "pm25_offset": 2,  "co_offset": 0.1, "lpg_offset": 0.5},
+    "TEST4":    {"temp_offset": 1,  "humidity_offset": -5, "noise_offset": 3,  "pm25_offset": 20, "co_offset": 0.5, "lpg_offset": 0.2},
+    "TEST5":    {"temp_offset": 0.5,"humidity_offset": 2,  "noise_offset": 2,  "pm25_offset": 3,  "co_offset": 0.1, "lpg_offset": 0.3}
 }
 
 def fetch_weather():

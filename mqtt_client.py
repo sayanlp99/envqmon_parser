@@ -4,7 +4,7 @@ import ssl
 import paho.mqtt.client as mqtt
 from dotenv import load_dotenv
 
-from db import insert_device_data
+from db import insert_device_data, get_device_id
 from redis_client import update_live_data
 
 load_dotenv()
@@ -32,7 +32,11 @@ def on_message(client, userdata, msg):
     print(f"📥 Message from {topic}: {payload}")
 
     try:
-        device_id = topic.split("/")[1]
+        device_name = topic.split("/")[1]
+        device_id = get_device_id(device_name)
+        if not device_id:
+            print(f"⚠️ Device not found in DB: {device_name}")
+            return
         data = json.loads(payload)
 
         insert_device_data(device_id, data)
