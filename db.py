@@ -17,12 +17,12 @@ def insert_device_data(device_id, data):
         query = """
         INSERT INTO "DeviceData" (
             device_id, temperature, humidity, pressure,
-            co, methane, lpg, pm25, pm10, noise, light
-        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            co, co2, methane, lpg, pm25, pm10, noise, light
+        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         """
         cur.execute(query, (
             device_id, data["temperature"], data["humidity"], data["pressure"],
-            data["co"], data["methane"], data["lpg"], data["pm25"], data["pm10"],
+            data["co"], data["co2"], data["methane"], data["lpg"], data["pm25"], data["pm10"],
             data["noise"], data["light"]
         ))
 

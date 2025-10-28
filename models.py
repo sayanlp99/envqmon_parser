@@ -6,6 +6,7 @@ class SensorData:
     humidity: float
     pressure: float
     co: float
+    co2: float
     methane: float
     lpg: float
     pm25: float

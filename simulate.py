@@ -23,11 +23,12 @@ LOCATION = {"lat": 12.9716, "lon": 77.5946}  # Bangalore
 
 # Device definitions
 DEVICES = {
-    "TEST":     {"temp_offset": 2,  "humidity_offset": 5,  "noise_offset": 5,  "pm25_offset": 5,  "co_offset": 0.3, "lpg_offset": 2},
-    "TEST1":     {"temp_offset": -1, "humidity_offset": 0,  "noise_offset": -10,"pm25_offset": 0,  "co_offset": 0.0, "lpg_offset": 0},
-    "TEST3":    {"temp_offset": 0,  "humidity_offset": 0,  "noise_offset": 0,  "pm25_offset": 2,  "co_offset": 0.1, "lpg_offset": 0.5},
-    "TEST4":    {"temp_offset": 1,  "humidity_offset": -5, "noise_offset": 3,  "pm25_offset": 20, "co_offset": 0.5, "lpg_offset": 0.2},
-    "TEST5":    {"temp_offset": 0.5,"humidity_offset": 2,  "noise_offset": 2,  "pm25_offset": 3,  "co_offset": 0.1, "lpg_offset": 0.3}
+    "TEST":     {"temp_offset": 2,  "humidity_offset": 5,  "noise_offset": 5,  "pm25_offset": 5,  "co_offset": 0.3, "lpg_offset": 2, "co2_offset": 30},
+    "TEST1":    {"temp_offset": -1, "humidity_offset": 0,  "noise_offset": -10,"pm25_offset": 0,  "co_offset": 0.0, "lpg_offset": 0, "co2_offset": 0},
+    "TEST3":    {"temp_offset": 0,  "humidity_offset": 0,  "noise_offset": 0,  "pm25_offset": 2,  "co_offset": 0.1, "lpg_offset": 0.5, "co2_offset": 10},
+    "TEST4":    {"temp_offset": 1,  "humidity_offset": -5, "noise_offset": 3,  "pm25_offset": 20, "co_offset": 0.5, "lpg_offset": 0.2, "co2_offset": 50},
+    "TEST5":    {"temp_offset": 0.5,"humidity_offset": 2,  "noise_offset": 2,  "pm25_offset": 3,  "co_offset": 0.1, "lpg_offset": 0.3, "co2_offset": 15},
+    "ENVQMON-55D528":    {"temp_offset": 0,  "humidity_offset": 0,  "noise_offset": 0,  "pm25_offset": 2,  "co_offset": 0.1, "lpg_offset": 0.5, "co2_offset": 10}
 }
 
 def fetch_weather():
@@ -124,7 +125,8 @@ def simulate():
             "pm25": random.uniform(30, 80) + offsets["pm25_offset"],
             "pm10": random.uniform(50, 120) + offsets["pm25_offset"],
             "noise": 50 + offsets["noise_offset"],
-            "light": 200
+            "light": 200,
+            "co2": random.uniform(380, 450) + offsets.get("co2_offset", 0)
         }
 
     client = mqtt.Client(client_id=f"sim_multi_device", protocol=mqtt.MQTTv311)
@@ -170,7 +172,7 @@ def simulate():
                 states[dev]["noise"] = drift(states[dev]["noise"], profile["noise"] + offsets["noise_offset"], noise=0.5)
                 states[dev]["pm25"] = drift(states[dev]["pm25"], profile["pm25"] + offsets["pm25_offset"], noise=0.5)
                 states[dev]["pm10"] = drift(states[dev]["pm10"], profile["pm10"] + offsets["pm25_offset"], noise=1)
-
+                states[dev]["co2"] = drift(states[dev]["co2"], 750 + offsets.get("co2_offset", 0), noise=2)
                 states[dev]["co"] = drift(states[dev]["co"], 1.0 + offsets["co_offset"], noise=0.01)
                 states[dev]["methane"] = drift(states[dev]["methane"], 100, noise=1)
                 states[dev]["lpg"] = drift(states[dev]["lpg"], 100 + offsets["lpg_offset"], noise=1)
